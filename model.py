@@ -5,6 +5,15 @@ from keras.optimizers import Adam
 from keras.models import Model
 from sklearn.model_selection import train_test_split
 from data_helpers import load_data,get_config
+import os
+import numpy as np
+import tensorflow as tf
+from keras.backend.tensorflow_backend import set_session
+
+# set gpu memory allow growth
+tfconfig = tf.ConfigProto()
+tfconfig.gpu_options.allow_growth = True
+set_session(tf.Session(config=tfconfig))
 
 print('Loading data')
 x, y, vocabulary, vocabulary_inv = load_data()
@@ -14,7 +23,7 @@ x, y, vocabulary, vocabulary_inv = load_data()
 # len(vocabulary) -> 18765
 # len(vocabulary_inv) -> 18765
 
-X_train, X_test, y_train, y_test = train_test_split( x, y, test_size=0.2, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(x, y, test_size=0.1, random_state=42)
 
 # X_train.shape -> (8529, 56)
 # y_train.shape -> (8529, 2)
@@ -36,7 +45,8 @@ batch_size = config.batch_size # 30
 print('Indexing word vectors.')
 
 embeddings_index = {}
-with open(os.path.join('glove', 'glove.6B.100d.txt')) as f:
+embedding_file = os.path.join('glove','glove.6B.'+str(embedding_dim)+'d.txt')
+with open(embedding_file) as f:
     for line in f:
         values = line.split()
         word = values[0]
@@ -48,7 +58,7 @@ print('Found %s word vectors.' % len(embeddings_index))
 # prepare embedding matrix
 num_words = min(config.vocabulary_size, vocabulary_size)
 embedding_matrix = np.zeros((num_words, embedding_dim))
-for word, i in vocabulary_inv.items():
+for word, i in vocabulary.items():
     # if i >= MAX_NUM_WORDS:
     #     continue
     embedding_vector = embeddings_index.get(word)
@@ -59,7 +69,7 @@ for word, i in vocabulary_inv.items():
 # this returns a tensor
 print("Creating Model...")
 inputs = Input(shape=(sequence_length,), dtype='int32')
-embedding = Embedding(input_dim=vocabulary_size, output_dim=embedding_dim, weights=[embedding_matrix], input_length=sequence_length)(inputs)
+embedding = Embedding(input_dim=vocabulary_size, output_dim=embedding_dim, weights=[embedding_matrix], input_length=sequence_length, trainable=True)(inputs)
 reshape = Reshape((sequence_length,embedding_dim,1))(embedding)
 
 conv_0 = Conv2D(num_filters, kernel_size=(filter_sizes[0], embedding_dim), padding='valid', kernel_initializer='normal', activation='relu')(reshape)
