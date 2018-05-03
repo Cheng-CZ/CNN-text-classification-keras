@@ -4,7 +4,7 @@ from keras.callbacks import ModelCheckpoint
 from keras.optimizers import Adam
 from keras.models import Model
 from sklearn.model_selection import train_test_split
-from data_helpers import load_data
+from data_helpers import load_data,get_config
 
 print('Loading data')
 x, y, vocabulary, vocabulary_inv = load_data()
