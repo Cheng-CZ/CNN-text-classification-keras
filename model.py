@@ -33,10 +33,33 @@ drop = config.drop # 0.5
 epochs = config.epochs # 100
 batch_size = config.batch_size # 30
 
+print('Indexing word vectors.')
+
+embeddings_index = {}
+with open(os.path.join('glove', 'glove.6B.100d.txt')) as f:
+    for line in f:
+        values = line.split()
+        word = values[0]
+        coefs = np.asarray(values[1:], dtype='float32')
+        embeddings_index[word] = coefs
+
+print('Found %s word vectors.' % len(embeddings_index))
+
+# prepare embedding matrix
+num_words = min(config.vocabulary_size, vocabulary_size)
+embedding_matrix = np.zeros((num_words, embedding_dim))
+for word, i in vocabulary_inv.items():
+    # if i >= MAX_NUM_WORDS:
+    #     continue
+    embedding_vector = embeddings_index.get(word)
+    if embedding_vector is not None:
+        # words not found in embedding index will be all-zeros.
+        embedding_matrix[i] = embedding_vector
+
 # this returns a tensor
 print("Creating Model...")
 inputs = Input(shape=(sequence_length,), dtype='int32')
-embedding = Embedding(input_dim=vocabulary_size, output_dim=embedding_dim, input_length=sequence_length)(inputs)
+embedding = Embedding(input_dim=vocabulary_size, output_dim=embedding_dim, weights=[embedding_matrix], input_length=sequence_length)(inputs)
 reshape = Reshape((sequence_length,embedding_dim,1))(embedding)
 
 conv_0 = Conv2D(num_filters, kernel_size=(filter_sizes[0], embedding_dim), padding='valid', kernel_initializer='normal', activation='relu')(reshape)
