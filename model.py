@@ -21,16 +21,17 @@ X_train, X_test, y_train, y_test = train_test_split( x, y, test_size=0.2, random
 # X_test.shape -> (2133, 56)
 # y_test.shape -> (2133, 2)
 
-
 sequence_length = x.shape[1] # 56
 vocabulary_size = len(vocabulary_inv) # 18765
-embedding_dim = 256
-filter_sizes = [3,4,5]
-num_filters = 512
-drop = 0.5
 
-epochs = 100
-batch_size = 30
+config = get_config()
+embedding_dim = config.embedding_dim # 256
+filter_sizes = config.filter_sizes # [3,4,5]
+num_filters = config.num_filters # 512
+drop = config.drop # 0.5
+
+epochs = config.epochs # 100
+batch_size = config.batch_size # 30
 
 # this returns a tensor
 print("Creating Model...")

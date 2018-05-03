@@ -2,6 +2,31 @@ import numpy as np
 import re
 import itertools
 from collections import Counter
+import argparse
+
+def get_config():
+    """
+        embedding_dim = 256
+        filter_sizes = [3,4,5]
+        num_filters = 512
+        drop = 0.5
+
+        epochs = 100
+        batch_size = 30
+    """
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--embedding_dim', type=int, default=256, help='embedding dimension')
+    parser.add_argument('--filter_sizes', type=list, default=[3,4,5], help='convolution filters sizes')
+    parser.add_argument('--num_filters', type=int, default=512, help='number of conv filters')
+    parser.add_argument('--drop', type=float, default=0.5, help='ratio to be set as zeros')
+    parser.add_argument('--vocabulary_size', type=int, default=20000, help='the size of vocabulary')
+    parser.add_argument('--epochs', type=int, default=100, help='number of epochs')
+    parser.add_argument('--batch_size', type=int, default=30, help='batch size')
+
+    config = parser.parse_args()
+    print 'config is ', config
+    return config
 
 
 def clean_str(string):
