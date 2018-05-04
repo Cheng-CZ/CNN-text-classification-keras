@@ -3,6 +3,7 @@ import re
 import itertools
 from collections import Counter
 import argparse
+import random
 
 def get_config():
     """
@@ -16,7 +17,8 @@ def get_config():
     """
     parser = argparse.ArgumentParser()
 
-    parser.add_argument('--embedding_dim', type=int, default=256, help='embedding dimension')
+    parser.add_argument('--neg_sample', type=int, default=200000, help='number of neg samepls')	
+    parser.add_argument('--embedding_dim', type=int, default=200, help='embedding dimension')
     parser.add_argument('--filter_sizes', type=list, default=[3,4,5], help='convolution filters sizes')
     parser.add_argument('--num_filters', type=int, default=512, help='number of conv filters')
     parser.add_argument('--drop', type=float, default=0.5, help='ratio to be set as zeros')
@@ -50,7 +52,7 @@ def clean_str(string):
     return string.strip().lower()
 
 
-def load_data_and_labels():
+def load_data_and_labels(config):
     """
     Loads polarity data from files, splits the data into words and generates labels.
     Returns split sentences and labels.
@@ -60,6 +62,9 @@ def load_data_and_labels():
     positive_examples = [s.strip() for s in positive_examples]
     negative_examples = list(open("./data/rt-polarity.neg", "r").readlines())
     negative_examples = [s.strip() for s in negative_examples]
+    # random select some negatives samples
+    random.Random(6).shuffle(negative_examples)
+    negative_examples = negative_examples[:config.neg_sample]
     # Split by words
     x_text = positive_examples + negative_examples
     x_text = [clean_str(sent) for sent in x_text]
@@ -110,13 +115,13 @@ def build_input_data(sentences, labels, vocabulary):
     return [x, y]
 
 
-def load_data():
+def load_data(config):
     """
     Loads and preprocessed data for the dataset.
     Returns input vectors, labels, vocabulary, and inverse vocabulary.
     """
     # Load and preprocess data
-    sentences, labels = load_data_and_labels()
+    sentences, labels = load_data_and_labels(config)
     sentences_padded = pad_sentences(sentences)
     vocabulary, vocabulary_inv = build_vocab(sentences_padded)
     x, y = build_input_data(sentences_padded, labels, vocabulary)
