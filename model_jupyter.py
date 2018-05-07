@@ -12,7 +12,7 @@ import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
 import time
 
-np.random.seed(6)
+tf.set_random_seed(6)
 
 def call_function(config_input):
 
@@ -70,8 +70,8 @@ def call_function(config_input):
     print('Found %s word vectors.' % len(embeddings_index))
 
     # prepare embedding matrix
-#     num_words = min(config['vocabulary_size'], vocabulary_size)  # TODO shrink vocabulary size
-    num_words = vocabulary_size
+    num_words = min(config['vocabulary_size'], vocabulary_size)  # TODO shrink vocabulary size
+#     num_words = vocabulary_size
     embedding_matrix = np.zeros((num_words, embedding_dim))
     for word, i in vocabulary.items():
         # if i >= MAX_NUM_WORDS:

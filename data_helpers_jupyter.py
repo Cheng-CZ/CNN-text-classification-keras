@@ -104,18 +104,27 @@ def build_vocab(sentences, config):
     # Build vocabulary
     word_counts = Counter(itertools.chain(*sentences))
     # Mapping from index to word
-    vocabulary_inv = [x[0] for x in word_counts.most_common()]
+    vocabulary_inv = [x[0] for x in word_counts.most_common()][:config['vocabulary_size']]
     vocabulary_inv = list(sorted(vocabulary_inv))
     # Mapping from word to index
     vocabulary = {x: i for i, x in enumerate(vocabulary_inv)}
     return [vocabulary, vocabulary_inv]
 
+def get_(word, vocabulary):
+    index = vocabulary.get(word)
+    if index:
+        return index
+    else:
+        return vocabulary.get("<PAD/>")
+        
 
 def build_input_data(sentences, labels, vocabulary):
     """
     Maps sentences and labels to vectors based on a vocabulary.
     """
-    x = np.array([[vocabulary[word] for word in sentence] for sentence in sentences])
+#     x = np.array([[vocabulary[word] for word in sentence] for sentence in sentences])
+#     x = np.array([[vocabulary.get(word) for word in sentence] for sentence in sentences])
+    x = np.array([[get_(word, vocabulary) for word in sentence] for sentence in sentences])
     y = np.array(labels)
     return [x, y]
 
