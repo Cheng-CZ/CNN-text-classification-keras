@@ -3,12 +3,16 @@ from keras.layers import Reshape, Flatten, Dropout, Concatenate
 from keras.callbacks import ModelCheckpoint
 from keras.optimizers import Adam
 from keras.models import Model
+from keras import regularizers
 from sklearn.model_selection import train_test_split
 from data_helpers_jupyter import load_data,get_config
 import os
 import numpy as np
 import tensorflow as tf
 from keras.backend.tensorflow_backend import set_session
+import time
+
+np.random.seed(6)
 
 def call_function(config_input):
 
@@ -18,8 +22,15 @@ def call_function(config_input):
     set_session(tf.Session(config=tfconfig))
 
     config = config_input
+    
+    directory = './weight/' + config['dataset'] + time.strftime("%Y-%m-%d %H:%M") + '/'
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    
     print('Loading data')
     x, y, vocabulary, vocabulary_inv = load_data(config)
+    print 'x shape, ', x.shape
+    print 'y.shape, ', y.shape
 
     # x.shape -> (10662, 56)
     # y.shape -> (10662, 2)
@@ -59,7 +70,8 @@ def call_function(config_input):
     print('Found %s word vectors.' % len(embeddings_index))
 
     # prepare embedding matrix
-    num_words = min(config['vocabulary_size'], vocabulary_size)
+#     num_words = min(config['vocabulary_size'], vocabulary_size)  # TODO shrink vocabulary size
+    num_words = vocabulary_size
     embedding_matrix = np.zeros((num_words, embedding_dim))
     for word, i in vocabulary.items():
         # if i >= MAX_NUM_WORDS:
@@ -75,9 +87,9 @@ def call_function(config_input):
     embedding = Embedding(input_dim=vocabulary_size, output_dim=embedding_dim, weights=[embedding_matrix], input_length=sequence_length, trainable=True)(inputs)
     reshape = Reshape((sequence_length,embedding_dim,1))(embedding)
 
-    conv_0 = Conv2D(num_filters, kernel_size=(filter_sizes[0], embedding_dim), padding='valid', kernel_initializer='glorot_normal', activation='relu')(reshape)
-    conv_1 = Conv2D(num_filters, kernel_size=(filter_sizes[1], embedding_dim), padding='valid', kernel_initializer='glorot_normal', activation='relu')(reshape)
-    conv_2 = Conv2D(num_filters, kernel_size=(filter_sizes[2], embedding_dim), padding='valid', kernel_initializer='glorot_normal', activation='relu')(reshape)
+    conv_0 = Conv2D(num_filters, kernel_size=(filter_sizes[0], embedding_dim), padding='valid', kernel_initializer='glorot_normal', activation='relu', kernel_regularizer=regularizers.l2(0.01))(reshape)
+    conv_1 = Conv2D(num_filters, kernel_size=(filter_sizes[1], embedding_dim), padding='valid', kernel_initializer='glorot_normal', activation='relu', kernel_regularizer=regularizers.l2(0.01))(reshape)
+    conv_2 = Conv2D(num_filters, kernel_size=(filter_sizes[2], embedding_dim), padding='valid', kernel_initializer='glorot_normal', activation='relu', kernel_regularizer=regularizers.l2(0.01))(reshape)
 
     maxpool_0 = MaxPool2D(pool_size=(sequence_length - filter_sizes[0] + 1, 1), strides=(1,1), padding='valid')(conv_0)
     maxpool_1 = MaxPool2D(pool_size=(sequence_length - filter_sizes[1] + 1, 1), strides=(1,1), padding='valid')(conv_1)
@@ -91,13 +103,13 @@ def call_function(config_input):
     # this creates a model that includes
     model = Model(inputs=inputs, outputs=output)
 
-    checkpoint = ModelCheckpoint('weight/weights.{epoch:03d}-{val_acc:.4f}.hdf5', monitor='val_acc', verbose=1, save_best_only=True, mode='auto')
+    checkpoint = ModelCheckpoint(directory+'weights.{epoch:03d}-{val_acc:.4f}.hdf5', monitor='val_acc', verbose=1, save_best_only=True, mode='auto')
     adam = Adam(lr=1e-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
 
     model.compile(optimizer=adam, loss='binary_crossentropy', metrics=['accuracy'])
     print("Traning Model...")
-    model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=(X_test, y_test))  # starts training
-    # model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1, callbacks=[checkpoint], validation_data=(X_test, y_test))  # starts training
+#     model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1, validation_data=(X_test, y_test))  # starts training
+    model.fit(X_train, y_train, batch_size=batch_size, epochs=epochs, verbose=1, callbacks=[checkpoint], validation_data=(X_test, y_test))  # starts training
 
 
 

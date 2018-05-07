@@ -1,9 +1,11 @@
 import numpy as np
 import re
+import os
 import itertools
 from collections import Counter
 import argparse
 import random
+from sklearn.feature_extraction import stop_words
 
 def get_config():
     """
@@ -28,6 +30,7 @@ def get_config():
 
     config = parser.parse_args()
     print 'config is ', config
+    
     return config
 
 
@@ -58,9 +61,11 @@ def load_data_and_labels(config):
     Returns split sentences and labels.
     """
     # Load data from files
-    positive_examples = list(open("./data/rt-polarity.pos", "r").readlines())
+#     positive_examples = list(open("./data/rt-polarity.pos", "r").readlines())
+    positive_examples = list(open("./data/"+config['dataset']+".pos", "r").readlines())
     positive_examples = [s.strip() for s in positive_examples]
-    negative_examples = list(open("./data/rt-polarity.neg", "r").readlines())
+#     negative_examples = list(open("./data/rt-polarity.neg", "r").readlines())
+    negative_examples = list(open("./data/"+config['dataset']+".neg", "r").readlines())
     negative_examples = [s.strip() for s in negative_examples]
     # random select some negatives samples
     random.Random(6).shuffle(negative_examples)
@@ -91,7 +96,7 @@ def pad_sentences(sentences, padding_word="<PAD/>"):
     return padded_sentences
 
 
-def build_vocab(sentences):
+def build_vocab(sentences, config):
     """
     Builds a vocabulary mapping from word to index based on the sentences.
     Returns vocabulary mapping and inverse vocabulary mapping.
@@ -123,6 +128,6 @@ def load_data(config):
     # Load and preprocess data
     sentences, labels = load_data_and_labels(config)
     sentences_padded = pad_sentences(sentences)
-    vocabulary, vocabulary_inv = build_vocab(sentences_padded)
+    vocabulary, vocabulary_inv = build_vocab(sentences_padded, config)
     x, y = build_input_data(sentences_padded, labels, vocabulary)
     return [x, y, vocabulary, vocabulary_inv]
